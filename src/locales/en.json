@@ -4180,5 +4180,15 @@
   "canvasComputers.assignComputer": "Assign computer",
   "canvasComputers.dragAria": "Drag {name} to a team",
   "canvasComputers.namePlaceholder": "e.g. Engineering desktop",
-  "canvasComputers.cancel": "Cancel"
+  "canvasComputers.cancel": "Cancel",
+  "apiInstances.title": "More custom endpoints",
+  "apiInstances.subtitle": "Each one is a separate OpenAI-compatible endpoint with its own base URL and API key — every bot can pick it.",
+  "apiInstances.name": "Display name",
+  "apiInstances.url": "Base URL",
+  "apiInstances.key": "API key",
+  "apiInstances.add": "Add endpoint",
+  "apiInstances.adding": "Adding…",
+  "apiInstances.remove": "Remove",
+  "apiInstances.empty": "No extra endpoints yet.",
+  "apiInstances.failed": "Couldn't save the endpoint. Check the fields and try again."
 }

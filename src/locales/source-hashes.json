@@ -13163,7 +13163,17 @@
       "mcp.field.args": "66fdceb7b1a645231c9db8fd91b15066508ac2c24f69298963f805af6d3493c7",
       "call.skillEnablePrompt": "bd855239c87464d377fa97e610f8ca7b84ee8ea393f01e816b8f83f2cf3bd05b",
       "settings.threads.title": "377781a721e65a3e8a550664d99eac6bf6241390748d4dd06878115abea69ff5",
-      "workspaces.colMonth": "fd787ef3d46c9b82d8cf2130a66bf71e81435981c2a3280759e73fcefb26988c"
+      "workspaces.colMonth": "fd787ef3d46c9b82d8cf2130a66bf71e81435981c2a3280759e73fcefb26988c",
+      "apiInstances.title": "ec06f53c8ab199d23a7b4fd3b8324375c752078315ac6b44a7830f0e151b667f",
+      "apiInstances.subtitle": "0f9a9a00d08341e15500564c5f2a2886f664c6c3dddb30a6e475ac18631b0d9a",
+      "apiInstances.name": "2b7f6a84de917e387539dbe441ca22056e793d738e6c50db30c3f569e4448df3",
+      "apiInstances.url": "70589413a3c9793339fcf764276727ac652fa7dfe2f15fb5671251303a52ca49",
+      "apiInstances.key": "16f0ee47f993d6270c9059450473eea493ca8ae037f8877782ae2bc176f24d18",
+      "apiInstances.add": "ad897090864f2a622971da41fc664317ad8c887f54b23b81b125ac048b1dd643",
+      "apiInstances.adding": "c6de6f45c827f464b161b668ae93192ce4e6585c4029d8dd71795cbd7f922719",
+      "apiInstances.remove": "c3812fc4acb861d5182fc2b8155f327f736fbe5e5eb86a7bd7afcb6dc5497282",
+      "apiInstances.empty": "e2370f7d95f14ae1c598478e25ac9707c4f9b4f78cdfd1f15957c34c685d4b3d",
+      "apiInstances.failed": "15a9f1ef0847ed09b54853610591188340a5c6a95ec6173ae17ebe50932dcdfb"
     },
     "zh-tw": {
       "phone.error.sendCode": "464a87ac27e1a5fb8321c5b49504cfe39f404736a2d77184129a2f99b2004d54",

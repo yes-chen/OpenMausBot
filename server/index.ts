@@ -15049,10 +15049,20 @@ async function describeInstances() {
   const configs = providerConfigs();
   return (await registry.describe()).map((instance) => {
     const entry = configs[instance.instanceId];
+    const entryUrl = (entry?.config as { url?: unknown } | undefined)?.url;
     const described = {
       ...instance,
       ...(entry?.icon ? { icon: entry.icon } : {}),
       ...(entry?.access ? { access: entry.access } : {}),
+      // OpenAI-compatible endpoints: surface the human name and base URL so
+      // the API-keys screen can list extra endpoints without echoing keys.
+      ...(entry?.driver === "openai-compat"
+        ? {
+            driver: entry.driver,
+            ...(typeof entry.displayName === "string" && entry.displayName ? { displayName: entry.displayName } : {}),
+            ...(typeof entryUrl === "string" && entryUrl ? { url: entryUrl } : {}),
+          }
+        : {}),
     };
     if (hostedModels) return { ...described, readOnly: true,
       install: undefined, authentication: undefined, cli: undefined, cliCandidates: [],
@@ -23324,6 +23334,33 @@ const handleRequest = async (req: IncomingMessage, res: ServerResponse) => {
       } finally { providerConfigBusy = false; }
     }
 
+    // Add an extra OpenAI-compatible API endpoint: its own engine instance
+    // with its own key and base URL, beyond the built-in openaiCompat slot.
+    if (method === "POST" && path === "/api/instances/openai-compat") {
+      if (!String(req.headers["content-type"] ?? "").toLowerCase().startsWith("application/json")) {
+        return json(res, 415, { error: "content-type must be application/json" });
+      }
+      const body = await readBody(req, 8192) as { displayName?: unknown; url?: unknown; key?: unknown };
+      const displayName = typeof body.displayName === "string" ? body.displayName.trim() : "";
+      const url = typeof body.url === "string" ? body.url.trim() : "";
+      const key = typeof body.key === "string" ? body.key.trim() : "";
+      if (!displayName || displayName.length > 80 || !/^https?:\/\//.test(url) || url.length > 512 || !key || key.length > 4096) {
+        return json(res, 400, { error: "Enter a display name, an http(s) base URL and an API key." });
+      }
+      if (providerConfigBusy) return json(res, 409, { error: "provider settings are already being updated" });
+      providerConfigBusy = true;
+      try {
+        const instances = persistableInstanceConfigs(cfg);
+        let instanceId = `custom-${crypto.randomUUID().replaceAll("-", "").slice(0, 8)}`;
+        while (Object.hasOwn(instances, instanceId)) instanceId = `custom-${crypto.randomUUID().replaceAll("-", "").slice(0, 8)}`;
+        instances[instanceId] = { driver: "openai-compat", displayName, access: "api", config: { key, url } };
+        await persistProviderInstance(instanceId, instances);
+        return json(res, 201, { instanceId, instances: await describeInstances() });
+      } finally {
+        providerConfigBusy = false;
+      }
+    }
+
     if (method === "POST" && path === "/api/instances/claude-accounts") {
       if (!String(req.headers["content-type"] ?? "").toLowerCase().startsWith("application/json")) {
         return json(res, 415, { error: "content-type must be application/json" });
@@ -23539,8 +23576,11 @@ const handleRequest = async (req: IncomingMessage, res: ServerResponse) => {
       if (providerConfigBusy) return json(res, 409, { error: "provider settings are already being updated" });
       const instances = persistableInstanceConfigs(cfg);
       if (!Object.hasOwn(instances, instanceId)) return json(res, 404, { error: "unknown instance" });
-      if (instances[instanceId].driver !== "claudeAgent" || instanceId === "claude") {
-        return json(res, 400, { error: "Only added Claude accounts can be removed here." });
+      if (
+        (instances[instanceId].driver !== "claudeAgent" && instances[instanceId].driver !== "openai-compat") ||
+        instanceId === "claude" || instanceId === "openaiCompat"
+      ) {
+        return json(res, 400, { error: "Only added Claude accounts and OpenAI-compatible endpoints can be removed here." });
       }
       if (cfg.defaultModelSelection?.instanceId === instanceId || store.bots.some((bot) =>
         bot.modelSelection.instanceId === instanceId || bot.fallback?.some(candidate => candidate.instanceId === instanceId) || store.tasks(bot.id).some((task) => task.modelSelection?.instanceId === instanceId)) ||
