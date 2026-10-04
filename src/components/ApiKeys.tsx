@@ -2,7 +2,7 @@
 // browser development falls back to PUT /api/config. Secrets are write-only
 // either way — GET /api/config returns configured flags, never values.
 import { useEffect, useId, useRef, useState } from "react";
-import { Check, CircleHelp, ExternalLink, Loader2, Plus, Trash2, TriangleAlert } from "lucide-react";
+import { Check, CircleHelp, ExternalLink, Loader2, Plus, RotateCw, Trash2, TriangleAlert } from "lucide-react";
 import { api, useStore, type ConfigStatus } from "@/state/store";
 import { cn } from "@/lib/cn";
 import { useMenuMotion } from "./MenuMotion";
@@ -582,6 +582,7 @@ export function OpenAiCompatInstances() {
   const [name, setName] = useState("");
   const [url, setUrl] = useState("");
   const [key, setKey] = useState("");
+  const [models, setModels] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -607,17 +608,23 @@ export function OpenAiCompatInstances() {
 
   const add = () => {
     if (busy || !name.trim() || !url.trim() || !key.trim()) return;
+    if (/^https?:\/\//i.test(key.trim())) {
+      setError(t("apiInstances.keyLooksLikeUrl"));
+      return;
+    }
+    const modelList = models.split(",").map((m) => m.trim()).filter(Boolean);
     setBusy(true);
     setError(null);
     void api("/api/instances/openai-compat", {
       method: "POST",
-      body: JSON.stringify({ displayName: name.trim(), url: url.trim(), key: key.trim() }),
+      body: JSON.stringify({ displayName: name.trim(), url: url.trim(), key: key.trim(), ...(modelList.length ? { models: modelList } : {}) }),
     })
       .then((data: { instances?: OpenAiCompatInstanceRow[] }) => {
         if (Array.isArray(data?.instances)) setRows(data.instances);
         setName("");
         setUrl("");
         setKey("");
+        setModels("");
       })
       .catch((e: Error) => setError(e.message || t("apiInstances.failed")))
       .finally(() => setBusy(false));
@@ -628,6 +635,16 @@ export function OpenAiCompatInstances() {
     setBusy(true);
     setError(null);
     void api(`/api/instances/${encodeURIComponent(instanceId)}`, { method: "DELETE" })
+      .then(() => refresh())
+      .catch((e: Error) => setError(e.message || t("apiInstances.failed")))
+      .finally(() => setBusy(false));
+  };
+
+  const refreshModels = (instanceId: string) => {
+    if (busy) return;
+    setBusy(true);
+    setError(null);
+    void api(`/api/instances/${encodeURIComponent(instanceId)}/refresh-models`, { method: "POST" })
       .then(() => refresh())
       .catch((e: Error) => setError(e.message || t("apiInstances.failed")))
       .finally(() => setBusy(false));
@@ -649,6 +666,16 @@ export function OpenAiCompatInstances() {
             <div className="truncate text-[12px] text-ink">{row.displayName || row.instanceId}</div>
             {row.url && <div className="truncate font-mono text-[11px] text-ink-secondary">{row.url}</div>}
           </div>
+          <button
+            type="button"
+            onClick={() => refreshModels(row.instanceId)}
+            disabled={busy}
+            aria-label={t("apiInstances.refreshModels")}
+            title={t("apiInstances.refreshModels")}
+            className="shrink-0 rounded-md px-2 py-1 text-ink-secondary hover:bg-inset hover:text-ink disabled:opacity-50"
+          >
+            <RotateCw size={13} aria-hidden="true" />
+          </button>
           <button
             type="button"
             onClick={() => remove(row.instanceId)}
@@ -687,8 +714,18 @@ export function OpenAiCompatInstances() {
           type="password"
           aria-label={t("apiInstances.key")}
           disabled={busy}
+            className="w-full rounded-lg border border-hairline/40 bg-inset px-3 py-2 font-mono text-[12px] text-ink placeholder:text-ink-secondary focus:outline-none"
+        />
+        <input
+          value={models}
+          onChange={(e) => setModels(e.target.value)}
+          placeholder={t("apiInstances.modelsPlaceholder")}
+          aria-label={t("apiInstances.models")}
+          spellCheck={false}
+          disabled={busy}
           className="w-full rounded-lg border border-hairline/40 bg-inset px-3 py-2 font-mono text-[12px] text-ink placeholder:text-ink-secondary focus:outline-none"
         />
+        <p className="text-[11px] leading-relaxed text-ink-secondary">{t("apiInstances.keyHint")}</p>
         <button
           type="button"
           onClick={add}

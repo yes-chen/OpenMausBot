@@ -4190,5 +4190,10 @@
   "apiInstances.adding": "添加中…",
   "apiInstances.remove": "移除",
   "apiInstances.empty": "还没有额外的接入。",
-  "apiInstances.failed": "接入保存失败，请检查各项后重试。"
+  "apiInstances.failed": "接入保存失败，请检查各项后重试。",
+  "apiInstances.models": "模型列表（可选）",
+  "apiInstances.modelsPlaceholder": "glm-5.3、glm-4.6（留空自动探测）",
+  "apiInstances.keyHint": "只粘贴密钥本身，不要填网址。若模型选择器出现示例模型，说明该端点无法自动列出模型，请在上框手动填写或点“重新探测”。",
+  "apiInstances.keyLooksLikeUrl": "这看起来是网址而不是 API 密钥，请粘贴密钥本身",
+  "apiInstances.refreshModels": "重新探测模型"
 }

@@ -23340,12 +23340,21 @@ const handleRequest = async (req: IncomingMessage, res: ServerResponse) => {
       if (!String(req.headers["content-type"] ?? "").toLowerCase().startsWith("application/json")) {
         return json(res, 415, { error: "content-type must be application/json" });
       }
-      const body = await readBody(req, 8192) as { displayName?: unknown; url?: unknown; key?: unknown };
+      const body = await readBody(req, 8192) as { displayName?: unknown; url?: unknown; key?: unknown; models?: unknown };
       const displayName = typeof body.displayName === "string" ? body.displayName.trim() : "";
       const url = typeof body.url === "string" ? body.url.trim() : "";
       const key = typeof body.key === "string" ? body.key.trim() : "";
       if (!displayName || displayName.length > 80 || !/^https?:\/\//.test(url) || url.length > 512 || !key || key.length > 4096) {
         return json(res, 400, { error: "Enter a display name, an http(s) base URL and an API key." });
+      }
+      if (/^https?:\/\//i.test(key)) {
+        return json(res, 400, { error: "That API key looks like a URL. Paste the secret key itself, not a web address." });
+      }
+      const models = Array.isArray(body.models)
+        ? body.models.filter((m): m is string => typeof m === "string").map((m) => m.trim()).filter(Boolean).slice(0, 64)
+        : [];
+      if (models.some((m) => m.length > 200)) {
+        return json(res, 400, { error: "Model IDs must be 200 characters or fewer." });
       }
       if (providerConfigBusy) return json(res, 409, { error: "provider settings are already being updated" });
       providerConfigBusy = true;
@@ -23353,7 +23362,7 @@ const handleRequest = async (req: IncomingMessage, res: ServerResponse) => {
         const instances = persistableInstanceConfigs(cfg);
         let instanceId = `custom-${crypto.randomUUID().replaceAll("-", "").slice(0, 8)}`;
         while (Object.hasOwn(instances, instanceId)) instanceId = `custom-${crypto.randomUUID().replaceAll("-", "").slice(0, 8)}`;
-        instances[instanceId] = { driver: "openai-compat", displayName, access: "api", config: { key, url } };
+        instances[instanceId] = { driver: "openai-compat", displayName, access: "api", config: models.length ? { key, url, managedModels: models } : { key, url } };
         await persistProviderInstance(instanceId, instances);
         return json(res, 201, { instanceId, instances: await describeInstances() });
       } finally {
